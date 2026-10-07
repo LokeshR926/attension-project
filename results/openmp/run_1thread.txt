@@ -1,0 +1,15 @@
+
+OpenMP Self-Attention Benchmark
+Threads = 1
+D = 128, d_k = 128, d_v = 128
+Repetitions = 5
+
+N =   64 | QKV =    15.2843 ms | QK^T =     2.5704 ms | Softmax =     0.0724 ms | AV =     2.5589 ms | Total =    20.4965 ms
+N =  128 | QKV =    30.8867 ms | QK^T =    11.3576 ms | Softmax =     0.3507 ms | AV =    11.3782 ms | Total =    54.0243 ms
+N =  256 | QKV =    61.3460 ms | QK^T =    40.4917 ms | Softmax =     1.1949 ms | AV =    41.4121 ms | Total =   144.6017 ms
+N =  512 | QKV =   120.8295 ms | QK^T =   161.2911 ms | Softmax =     4.7986 ms | AV =   176.6134 ms | Total =   464.1605 ms
+N = 1024 | QKV =   285.3507 ms | QK^T =   704.9866 ms | Softmax =    21.3736 ms | AV =   777.4694 ms | Total =  1792.1684 ms
+
+Benchmark complete.
+Results saved to:
+results/openmp/self_attention.csv

@@ -1,0 +1,35 @@
+# Compiled binaries
+cuda/hello_cuda
+cuda/vector_add
+cuda/self_attention
+cuda/self_attention_tiled
+cuda/self_attention_softmax
+cuda/self_attention_e2e
+cuda/self_attention_profile
+
+tests/test_matrix
+tests/test_matmul
+tests/test_softmax
+tests/test_attention
+tests/test_attention_openmp
+
+benchmarks/cpu_attention
+benchmarks/openmp_attention
+
+# Object files
+*.o
+
+# Build directories
+build/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
