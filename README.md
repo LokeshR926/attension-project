@@ -82,13 +82,12 @@ attension-project/
 │   ├── attention_openmp.cpp
 │   ├── matrix.cpp
 │   └── matrix_ops.cpp
-├── tests/
-│   ├── test_attention.cpp
-│   ├── test_attention_openmp.cpp
-│   ├── test_matmul.cpp
-│   ├── test_matrix.cpp
-│   └── test_softmax.cpp
-└── CMakeLists.txt (if present)
+└── tests/
+    ├── test_attention.cpp
+    ├── test_attention_openmp.cpp
+    ├── test_matmul.cpp
+    ├── test_matrix.cpp
+    └── test_softmax.cpp
 ```
 
 Compiled executables and object files are intentionally not required in the repository. They should be generated locally using the supplied source code.
@@ -221,15 +220,15 @@ The GPU implementations compare their output against the CPU reference.
 
 For the T4 experiments, the maximum absolute error remained below `1e-4`.
 
-Representative final values:
+Authoritative T4 baseline maximum errors:
 
 | N | Max absolute error |
 |---:|------------------:|
 | 64 | `4.6492e-05` |
-| 128 | `6.9857e-05` |
-| 256 | `7.4685e-05` |
+| 128 | `7.0095e-05` |
+| 256 | `7.4744e-05` |
 | 512 | `8.7738e-05` |
-| 1024 | `9.2983e-05` |
+| 1024 | `9.3460e-05` |
 
 Small differences are expected because CPU and GPU floating-point operations can accumulate values in different orders.
 
@@ -255,6 +254,12 @@ Unless otherwise stated:
 - `Datatype = float32`
 
 The benchmark uses deterministic input generation so that different implementations can be compared consistently.
+
+### Experimental Results Sources
+
+- CPU and OpenMP reference measurements are stored under `results/`.
+- T4 baseline and tiled-GEMM measurements are stored under `results/cuda/`.
+- The latest CUDA end-to-end, stage-profiler, and parallel-softmax reference measurements reported in this README were recorded from the corresponding T4 Google Colab benchmark runs.
 
 ## Results
 
@@ -327,30 +332,36 @@ These timings represent GPU computation and should not be confused with end-to-e
 
 ### CUDA end-to-end measurement
 
+A separate benchmark measures host-to-device transfer, GPU computation, and device-to-host transfer.
+
 For `N = 1024`:
 
-- GPU compute: `2.8416 ms`
-- End-to-end: `3.2670 ms`
-- Difference: `0.4254 ms`
-- Share of end-to-end time: ~`13.0%`
+- GPU compute: `2.2377 ms`
+- End-to-end: `2.6612 ms`
+- Difference: `0.4235 ms`
+- Share of end-to-end time: approximately `15.9%`
 
-This illustrates why kernel time and application-level latency should be reported separately.
+This illustrates why kernel time and application-level latency should be reported separately. The compute and end-to-end measurements are independent benchmarks.
 
 ### CUDA stage profiling
+
+A CUDA-event-based profiler was used to estimate the contribution of each stage.
 
 For `N = 1024`, the profiled breakdown was:
 
 | Stage | Time (ms) | Share |
 |---|---:|---:|
-| QKV | 0.4321 | 12.05% |
-| Transpose | 0.0138 | 0.39% |
-| QK^T | 1.0732 | 29.93% |
-| Scale | 0.0409 | 1.14% |
-| Softmax | 0.9006 | 25.11% |
-| AV | 1.1095 | 30.94% |
-| Total | 3.5862 | 100% |
+| QKV | 0.3809 | 12.12% |
+| Transpose | 0.0123 | 0.39% |
+| QK^T | 0.9400 | 29.90% |
+| Scale | 0.0396 | 1.26% |
+| Softmax | 0.7797 | 24.80% |
+| AV | 0.9729 | 30.95% |
+| Total | 3.1436 | 100% |
 
-The major optimization targets were therefore:
+The profiling build adds CUDA event/timing overhead, so the profiled total should not be directly compared with the unprofiled CUDA baseline GPU computation time. The profiler is primarily used to identify relative stage contributions and bottlenecks.
+
+The major optimization targets identified were therefore:
 
 - `AV`
 - `QK^T`
@@ -373,7 +384,11 @@ The tiled implementation uses:
 | 512 | 0.7054 | 0.6840 | 1.03x |
 | 1024 | 2.1711 | 2.0314 | 1.07x |
 
-For `N = 1024`, the tiled version reduced latency by about `6.9%`.
+For `N = 1024`, the tiled version reduced latency by approximately `6.4%`.
+
+The optimization was more useful for larger matrices. For small matrices, shared-memory setup and synchronization overhead offset the benefit of data reuse.
+
+This experiment is retained as an important negative/limited result rather than being omitted.
 
 ### CUDA optimization 2: Parallel row-wise softmax
 
@@ -388,6 +403,8 @@ The original implementation assigned one CUDA thread to each row and performed a
 | 1024 | 2.1711 | 1.6056 | 1.35x |
 
 At `N = 1024`, the optimized softmax version reduced latency by approximately `26%` while preserving correctness.
+
+This is the strongest targeted optimization obtained so far.
 
 ## Key Findings
 
@@ -418,8 +435,8 @@ At `N = 1024`, the optimized softmax version reduced latency by approximately `2
 5. Clone the repository:
 
 ```bash
-!git clone https://github.com/<YOUR_USERNAME>/<YOUR_REPOSITORY>.git
-%cd <YOUR_REPOSITORY>
+!git clone https://github.com/LokeshR926/attension-project.git
+%cd attension-project
 ```
 
 6. Build the desired implementation using the commands in this README.
@@ -439,7 +456,13 @@ The same source can be reproduced using a Kaggle notebook with GPU acceleration.
 
 1. Create a Kaggle notebook.
 2. Enable GPU acceleration.
-3. Clone the repo.
+3. Clone the repository:
+
+```bash
+!git clone https://github.com/LokeshR926/attension-project.git
+%cd attension-project
+```
+
 4. Verify the GPU with `nvidia-smi`.
 5. Compile using `nvcc`.
 6. Run the tests and benchmarks.
@@ -489,15 +512,15 @@ A reproduction is considered successful even if absolute execution times differ,
 - the performance trends are broadly consistent, and
 - the hardware/software environment is documented.
 
-## Reference Results vs Reproduced Results
+## Reproduction Expectations
 
-The results included in this repository are reference measurements, not guaranteed performance targets.
+The results included in this repository are reference measurements from the stated hardware and software environment.
 
-For example, the reference T4 result for the parallel-softmax version at `N = 1024` is:
+- **On the same Tesla T4 / similar software environment**, results should be reasonably close to the reference measurements.
+- **On different GPUs or CPUs**, exact timings are not expected to match.
+- **Primary reproduction criteria** are correctness (output within expected tolerance), successful execution, and broad consistency in performance trends rather than bit-for-bit identical timing.
 
-- `1.6056 ms`
-
-Another T4 session may produce a somewhat different value because of:
+For example, the reference T4 result for the parallel-softmax version at `N = 1024` is `1.6056 ms`. Another T4 session may produce a somewhat different value because of:
 
 - GPU clock frequency
 - thermal state
@@ -506,7 +529,7 @@ Another T4 session may produce a somewhat different value because of:
 - CUDA/runtime version
 - benchmark repetition variation
 
-Therefore, reproduction should focus on both correctness and performance trends, rather than requiring bit-for-bit identical timing.
+Therefore, reproduction should focus on both correctness and performance trends.
 
 ## Current Project Status
 
@@ -531,7 +554,7 @@ Therefore, reproduction should focus on both correctness and performance trends,
 | CUDA stage profiling | Complete |
 | Shared-memory tiled GEMM | Complete |
 | Parallel softmax optimization | Complete |
-| Final documentation | In progress |
+| Final documentation | Complete |
 | H200 comparison | Not yet performed |
 | Further GEMM optimization | Optional future work |
 
@@ -543,9 +566,9 @@ Therefore, reproduction should focus on both correctness and performance trends,
 - Shared-memory tiling shows only modest gains for the current kernel design.
 - This project is intended to study performance trends rather than serve as a production-grade optimized Transformer implementation.
 
-## License and Usage
+## License
 
-This repository is intended for academic and research use. Please cite the project and respect the source code licensing terms if present in the repository.
+No explicit open-source license is currently specified for this repository. If the project is later released under a specific license, this section should be updated accordingly.
 
 ## Summary
 
