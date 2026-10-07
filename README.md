@@ -224,10 +224,10 @@ For the T4 experiments, the maximum absolute error remained below:
 Representative final values:
 
 N = 64    → 4.6492e-05
-N = 128   → 6.9857e-05
-N = 256   → 7.4685e-05
+N = 128   → 7.0095e-05
+N = 256   → 7.4744e-05
 N = 512   → 8.7738e-05
-N = 1024  → 9.2983e-05
+N = 1024  → 9.3460e-05
 
 Small differences are expected because CPU and GPU floating-point operations can accumulate values in different orders.
 
@@ -255,6 +255,8 @@ Repetitions = 5
 Datatype = float32
 
 The benchmark uses deterministic input generation so that different implementations can be compared consistently.
+
+The reference CPU and OpenMP measurements are stored under `results/`. The T4 baseline and tiled-GEMM measurements are stored under `results/cuda/`. The latest end-to-end and stage-profiler measurements reported below were recorded from the corresponding T4 Colab benchmark runs.
 
 11. Sequential CPU Results
 
@@ -507,16 +509,16 @@ Device → Host transfer
 
 For N=1024:
 
-GPU compute:       2.8416 ms
-End-to-end:        3.2670 ms
+GPU compute:       2.2377 ms
+End-to-end:        2.6612 ms
 
 The difference is approximately:
 
-0.4254 ms
+0.4235 ms
 
 or about:
 
-13.0%
+15.9%
 
 of the measured end-to-end time.
 
@@ -536,47 +538,47 @@ Share
 
 QKV
 
-0.4321 ms
+0.3809 ms
 
-12.05%
+12.12%
 
 Transpose
 
-0.0138 ms
+0.0123 ms
 
 0.39%
 
 QK^T
 
-1.0732 ms
+0.9400 ms
 
-29.93%
+29.90%
 
 Scale
 
-0.0409 ms
+0.0396 ms
 
-1.14%
+1.26%
 
 Softmax
 
-0.9006 ms
+0.7797 ms
 
-25.11%
+24.80%
 
 AV
 
-1.1095 ms
+0.9729 ms
 
-30.94%
+30.95%
 
 Total
 
-3.5862 ms
+3.1436 ms
 
 100%
 
-The profiling build adds timing/event overhead, so the profiled total should not be directly compared with the unprofiled 2.1711 ms baseline. The profiler is used primarily to identify relative stage contributions.
+The profiling build uses a different measurement path and adds CUDA-event timing overhead. Therefore, the profiled total should not be treated as a directly comparable replacement for the unprofiled CUDA compute benchmark. The profiler is used primarily to identify relative stage contributions and bottlenecks.
 
 The major optimization targets identified were therefore:
 
@@ -652,7 +654,7 @@ Speedup
 At N=1024:
 
 Speedup ≈ 1.07×
-Latency reduction ≈ 6.9%
+Latency reduction ≈ 6.4%
 
 The optimization was more useful for larger matrices. For small matrices, shared-memory setup and synchronization overhead offset the benefit of data reuse.
 
@@ -733,7 +735,7 @@ Latency reduction: approximately 26%
 
 Correctness remained within the same numerical error range.
 
-This is the strongest targeted optimization obtained so far.
+This is the strongest targeted optimization obtained so far in the recorded T4 experiments. The values above were recorded from the T4 Colab run; the corresponding source is `cuda/self_attention_softmax.cu`.
 
 18. What the Experiments Show
 
@@ -783,8 +785,8 @@ Verify CUDA:
 
 Clone the repository:
 
-!git clone https://github.com/<YOUR_USERNAME>/<YOUR_REPOSITORY>.git
-%cd <YOUR_REPOSITORY>
+!git clone https://github.com/LokeshR926/attension-project.git
+%cd attension-project
 
 Build the desired implementation using the commands in this README.
 
@@ -816,8 +818,8 @@ Enable GPU acceleration.
 
 Clone the GitHub repository:
 
-!git clone https://github.com/<YOUR_USERNAME>/<YOUR_REPOSITORY>.git
-%cd <YOUR_REPOSITORY>
+!git clone https://github.com/LokeshR926/attension-project.git
+%cd attension-project
 
 Verify the GPU:
 
@@ -987,7 +989,7 @@ Complete
 
 Final documentation
 
-In progress
+Complete
 
 H200 comparison
 
